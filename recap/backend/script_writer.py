@@ -16,11 +16,14 @@ class EventTeam:
     
     def mention(self, full=False):
         self.mentioned += 1
-        if self.mentioned in (2, 4) and not full: 
+        # the second time a team is mentioned use only their full name
+        if self.mentioned == 2 and not full: 
             return self.nick
         else:
             # we want to space out the numbers for the benefit of the TTS
-            return " ".join(str(self.number)) + " " + self.nick
+            # this randomly changes out zero for the letter "o" for extra inconsistency
+            numbers = [c if c != '0' else random.choice(("0", "o")) for c in str(self.number) ]
+            return " ".join(numbers) + " " + self.nick
     
     def relevant_scores(self, exclude=(0,)):
         """Returns the 2 highest scoring matches and the lowest match excluding matches in exclude= """
@@ -185,8 +188,7 @@ class ScriptWriter:
             date_text = f"{date_fstart}, {date_start.year}"
 
         dialog = f"""Hello, my name is Outreach Lead from Team That Wants Inspire and today on F Tee See Recap,
-we will be talking about the {event_name} {event_type}. 
-This event happened out of {city}, {state_prov} {region_name}, on {date_text}. """
+we will be talking about the {event_name} {event_type} that happened out of {city}, {state_prov} {region_name}, on {date_text}. """
 
         return dialog
     
@@ -204,7 +206,16 @@ This event happened out of {city}, {state_prov} {region_name}, on {date_text}. "
         # talk about the team with the lowest score standard deviation as the most "consistent" team
         opening_quip = random.choice([
             "The competition was strong yet diverse with both veteran teams and new teams.",
+            "This competition was electrifying to watch.",
+            "Because of pandemic restrictions, this event was smaller than usual, but was even more intense."
         ])
+
+        analysis_choices = [
+            "Their robot's high scores came from their fast rev slides.",
+            "Their robot's fast intake, spending only 2 seconds max on collection each cycle, was critical to their success.",
+            "Their robot's speedy lift arm made those high scores possible.",
+            "The driveteam's many hours of practice have paid off.",
+        ]
 
         highest_quals_score: EventTeam = self.top_score[0]
         highest_quals_team1: EventTeam = self.teams[self.top_score[1][0]]
@@ -220,11 +231,12 @@ This event happened out of {city}, {state_prov} {region_name}, on {date_text}. "
         quals_script = f"""
 {opening_quip}
 The highest score in qualification matches was an impressive {highest_quals_score} points by 
-{highest_quals_team1.mention()} and {highest_quals_team2.mention()}. 
-{first_team.mention()} was a strong contender at this event, also putting up scores of 
-{first_scores[0]} points, {first_scores[1]} points, and {first_scores[2]} points,
-while {second_team.mention()} also put up {second_scores[0]} points, {second_scores[1]} points, and an average of {statistics.mean(second_team.scores)}.
-A consistent team to watch out for was team {consistent_team.mention()} with a high score of {max(consistent_team.scores)} and 
+{highest_quals_team1} and {highest_quals_team2}. 
+{first_team} was a strong contender at this event, also putting up scores of 
+{first_scores[0]} points, {first_scores[1]} points, and {first_scores[2]} points.
+{random.choice(analysis_choices)}.
+Additionally, {second_team} also put up {second_scores[0]} points, {second_scores[1]} points, and an average of {statistics.mean(second_team.scores)}.
+A consistent yet underrated team we also saw was {consistent_team} with a high score of {max(consistent_team.scores)} and 
 an average of {statistics.mean(consistent_team.scores)}. 
 """
         return quals_script
@@ -250,6 +262,7 @@ the first alliance captain {self.alliances[0].teams[0].mention()} selected {word
 the second captain {self.alliances[1].teams[0].mention()} selected {word_join(self.alliances[1].teams[1:], key=lambda x: x.mention())}, 
 the third captain {self.alliances[2].teams[0].mention()} selected {word_join(self.alliances[2].teams[1:], key=lambda x: x.mention())}, 
 and the fourth captain {self.alliances[3].teams[0].mention()} selected {word_join(self.alliances[3].teams[1:], key=lambda x: x.mention())}.
+These were strategic picks, combining match scouting, pit scouting, and advancement considerations.
         """
         finals, semis1, semis2 = self.elims
 
@@ -281,8 +294,8 @@ In finals, the {winners.name()} composed of {word_join(winners.teams, key=lambda
 The finals rounds would have intense high scores of {finals_red} points from {finals.red_alliance.teams[0]}'s {finals.red_alliance} and 
 {finals_blue} points from {finals.blue_alliance.teams[0]}'s {finals.blue_alliance}
 The highest score in eliminations was from {high_alliance.name()} with a score of {max(high_alliance.scores)}. 
-These were some really high level matches at this tournament at this stage of the season, and I'm excited to see how the season progresses.
-        """
+These were some high level matches at this tournament at this stage of the season, and I'm excited to see how the season progresses. 
+"""
         return alliances_script + elims_script
     
     def awards_conclusion(self):
@@ -296,10 +309,10 @@ These were some really high level matches at this tournament at this stage of th
             runners_up = f", followed by {word_join(inspire_teams[1:], lambda x: x.mention(full=True))}."
 
         if len(inspire_teams):
-            awards_script = f"""\nAs for awards, the Inspire nominations were {inspire_teams[0].mention(full=True)} winning{runners_up}.  """
+            awards_script = f"""\nAs for awards, the Inspire nominations were {inspire_teams[0].mention(full=True)} winning{runners_up}. \n"""
         else:
             awards_script = ""
-        end_script = "The season is still ongoing, and I'm excited to see how these teams will do at regionals, worlds, or beyond."
+        end_script = "I'm excited to cover how these teams will do at regionals, worlds, or MTI in future episodes."
 
         return awards_script + end_script
         # read off the inspire nominees
