@@ -9,9 +9,10 @@ class FTCEventsClient:
         self.username = username
         self.token = token
         self._b64 = base64.b64encode(f"{self.username}:{self.token}".encode()).decode()
+        self.session = requests.Session()
 
     def fetch(self, path, **params):
-        r = requests.get(f"{BASE_API_URL}/{SEASON}/{path}", headers={"Authorization": "Basic " + self._b64}, params=params)
+        r = self.session.get(f"{BASE_API_URL}/{SEASON}/{path}", headers={"Authorization": "Basic " + self._b64}, params=params)
         r.raise_for_status()
         return r.json()
     
