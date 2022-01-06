@@ -1,0 +1,5 @@
+__pycache__/
+tts_output.wav
+venv/
+cenv/
+token
