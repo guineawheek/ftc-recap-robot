@@ -1,6 +1,7 @@
 import datetime
 import random
 import statistics
+import re
 from .data_fetch import FTCEventsClient
 
 INF_RANK = 999
@@ -179,7 +180,11 @@ class ScriptWriter:
         date_text = "Never"
 
         event = self.event
-        event_name = event['name'][3:] # we clip out the first three chars since it's usually a stateprov code
+        if event['name'].startswith("CA-Northern "):
+            # hack for norcal prefix chopping
+            event_name = event['name'][len("CA-Northern "):]
+        else:
+            event_name = event['name'][3:] # we clip out the first three chars since it's usually a stateprov code
         event_type = "" #event['typeName'] usually redundant
 
         state_abbrev = event['stateprov']
@@ -217,21 +222,26 @@ we will be talking about the {event_name} {event_type} that happened out of {cit
         opening_quip = random.choice([
             "The competition was strong yet diverse with both veteran teams and new teams.",
             "This competition was electrifying to watch.",
+            "This competition was critical for top teams on their way to regionals.",
             "Because of pandemic restrictions, this event was smaller than usual, but was even more intense."
         ])
+        if len(self.top_score[1]) == 1:
+            opening_quip = "Due to the pandemic, this event was conducted remotely."
 
         analysis_choices = [
             "Their robot's high scores came from their fast rev slides.",
             "Their robot's fast intake, spending only 2 seconds max on collection each cycle, was critical to their success.",
             "Their robot's speedy lift arm made those high scores possible.",
-            "The driveteam's many hours of practice have paid off.",
+            "Their robot's 20 to 1 drivetrain gave them the edge they needed.",
+            "Their robot's aerodynamic pocketing gave them dominating speed.",
+            "Their robot's mecanum drivetrain gave them the precision needed to score.",
+            "Their robot's six wheel drive gave them the acceleration needed to score.",
+            "Their driveteam's many hours of practice have paid off.",
         ]
-
+        top_score_teams = [self.teams[x] for x in self.top_score[1]]
         highest_quals_score: EventTeam = self.top_score[0]
-        highest_quals_team1: EventTeam = self.teams[self.top_score[1][0]]
-        highest_quals_team2: EventTeam = self.teams[self.top_score[1][1]]
 
-        first_team = min(highest_quals_team1, highest_quals_team2, key=lambda t: t.rank)
+        first_team = min(top_score_teams, key=lambda t: t.rank)
         first_scores = first_team.relevant_scores(exclude=(highest_quals_score,))
         second_team = min(self.teams.values(), key=lambda t: t.rank if t != first_team else INF_RANK)
         second_scores = second_team.relevant_scores(exclude=(highest_quals_score,))
@@ -241,13 +251,13 @@ we will be talking about the {event_name} {event_type} that happened out of {cit
         quals_script = f"""
 {opening_quip}
 The highest score in qualification matches was an impressive {highest_quals_score} points by 
-{highest_quals_team1} and {highest_quals_team2}. 
-{first_team} was a strong contender at this event, also putting up scores of 
+{word_join(top_score_teams, key=str)}.
+{first_team} was one of the top teams at this event, putting up scores of 
 {first_scores[0]} points, {first_scores[1]} points, and {first_scores[2]} points.
 {random.choice(analysis_choices)}
-Additionally, {second_team} also put up {second_scores[0]} points, {second_scores[1]} points, and an average of {statistics.mean(second_team.scores)}.
-A consistent yet underrated team we also saw was {consistent_team} with a high score of {max(consistent_team.scores)} and 
-an average of {statistics.mean(consistent_team.scores)}. 
+Additionally, {second_team} also put up {second_scores[0]} points, {second_scores[1]} points, and an average of {statistics.mean(second_team.scores):.1f}.
+The most consistent team we saw was {consistent_team} with a high score of {max(consistent_team.scores)} and 
+an average of {statistics.mean(consistent_team.scores):.1f}. 
 """
         return quals_script
 
@@ -322,14 +332,17 @@ These were some high level matches at this tournament at this stage of the seaso
             awards_script = f"""\nAs for awards, the Inspire nominations were {inspire_teams[0].mention(full=True)} winning{runners_up}. \n"""
         else:
             awards_script = ""
-        end_script = "I'm excited to cover how these teams will do at regionals, worlds, or M T I in future episodes."
+        end_script = "I'm excited to cover how these teams will do at regionals, worlds, or Em Tee Eye in future episodes."
 
         return awards_script + end_script
         # read off the inspire nominees
         # say some quip about being excited to see how teams will do later in the season
     
     def full_script(self):
-        return (self.event_intro() + self.quals_matches() + self.elims_matches() + self.awards_conclusion()).replace("\n", " ")
+        """Returns the full script with some basic preprocessing done."""
+        return re.sub(' +', ' ',
+            (self.event_intro() + self.quals_matches() + 
+            self.elims_matches() + self.awards_conclusion()).replace("\n", " "))
 
 us_state_to_abbrev = {
     "Alabama": "AL",

@@ -7,3 +7,4 @@ token
 *.mp4*
 *.txt
 .ipynb_checkpoints/
+out/
