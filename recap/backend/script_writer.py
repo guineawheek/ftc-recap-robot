@@ -22,8 +22,18 @@ class EventTeam:
         else:
             # we want to space out the numbers for the benefit of the TTS
             # this randomly changes out zero for the letter "o" for extra inconsistency
-            numbers = [c if c != '0' else random.choice(("0", "o")) for c in str(self.number) ]
-            return " ".join(numbers) + " " + self.nick
+            numbers = list(str(self.number))
+            if random.random() < 0.5 or len(numbers) not in (4, 5):
+                # spell out all numbers
+                numbers = [c if c != '0' else random.choice(("0", "o")) for c in str(self.number) ]
+                return " ".join(numbers) + " " + self.nick
+            else:
+                if len(numbers) == 4:
+                    # as in "forty forty-two"
+                    return f"{numbers[0]}{numbers[1]} {numbers[2]}{numbers[3]} " + self.nick
+                else:
+                    # as in "sixteen three two six"
+                    return f"{numbers[0]}{numbers[1]} {' '.join(numbers[2:])} " + self.nick
     
     def relevant_scores(self, exclude=(0,)):
         """Returns the 2 highest scoring matches and the lowest match excluding matches in exclude= """
@@ -187,7 +197,7 @@ class ScriptWriter:
         if date_fstart == date_fend:
             date_text = f"{date_fstart}, {date_start.year}"
 
-        dialog = f"""Hello, my name is Outreach Lead from Team That Wants Inspire and today on F Tee See Recap,
+        dialog = f"""Hello, my name is Outreach Lead from Team That Wants Inspire and today on Eff Tee See Recap
 we will be talking about the {event_name} {event_type} that happened out of {city}, {state_prov} {region_name}, on {date_text}. """
 
         return dialog
@@ -234,7 +244,7 @@ The highest score in qualification matches was an impressive {highest_quals_scor
 {highest_quals_team1} and {highest_quals_team2}. 
 {first_team} was a strong contender at this event, also putting up scores of 
 {first_scores[0]} points, {first_scores[1]} points, and {first_scores[2]} points.
-{random.choice(analysis_choices)}.
+{random.choice(analysis_choices)}
 Additionally, {second_team} also put up {second_scores[0]} points, {second_scores[1]} points, and an average of {statistics.mean(second_team.scores)}.
 A consistent yet underrated team we also saw was {consistent_team} with a high score of {max(consistent_team.scores)} and 
 an average of {statistics.mean(consistent_team.scores)}. 
@@ -258,10 +268,10 @@ an average of {statistics.mean(consistent_team.scores)}.
 
         alliances_script = f"""
 During alliance selection, 
-the first alliance captain {self.alliances[0].teams[0].mention()} selected {word_join(self.alliances[0].teams[1:], key=lambda x: x.mention())}, 
-the second captain {self.alliances[1].teams[0].mention()} selected {word_join(self.alliances[1].teams[1:], key=lambda x: x.mention())}, 
-the third captain {self.alliances[2].teams[0].mention()} selected {word_join(self.alliances[2].teams[1:], key=lambda x: x.mention())}, 
-and the fourth captain {self.alliances[3].teams[0].mention()} selected {word_join(self.alliances[3].teams[1:], key=lambda x: x.mention())}.
+the first alliance captain {self.alliances[0].teams[0].mention()} selected {word_join(self.alliances[0].teams[1:], key=lambda x: x.mention())}.
+The second captain {self.alliances[1].teams[0].mention()} selected {word_join(self.alliances[1].teams[1:], key=lambda x: x.mention())}.
+The third captain {self.alliances[2].teams[0].mention()} selected {word_join(self.alliances[2].teams[1:], key=lambda x: x.mention())}.
+Finally, the fourth captain {self.alliances[3].teams[0].mention()} selected {word_join(self.alliances[3].teams[1:], key=lambda x: x.mention())}.
 These were strategic picks, combining match scouting, pit scouting, and advancement considerations.
         """
         finals, semis1, semis2 = self.elims
@@ -292,7 +302,7 @@ In semifinals, the {semis1_msg} and {semis2_msg}.
 In finals, the {winners.name()} composed of {word_join(winners.teams, key=lambda x: x.mention(full=True))} would prevail in 
 {self.elims[0].num_rounds} matches. 
 The finals rounds would have intense high scores of {finals_red} points from {finals.red_alliance.teams[0]}'s {finals.red_alliance} and 
-{finals_blue} points from {finals.blue_alliance.teams[0]}'s {finals.blue_alliance}
+{finals_blue} points from {finals.blue_alliance.teams[0]}'s {finals.blue_alliance}.
 The highest score in eliminations was from {high_alliance.name()} with a score of {max(high_alliance.scores)}. 
 These were some high level matches at this tournament at this stage of the season, and I'm excited to see how the season progresses. 
 """
@@ -306,20 +316,20 @@ These were some high level matches at this tournament at this stage of the seaso
         ]
 
         if len(inspire_teams) > 1:
-            runners_up = f", followed by {word_join(inspire_teams[1:], lambda x: x.mention(full=True))}."
+            runners_up = f", followed by {word_join(inspire_teams[1:], lambda x: x.mention(full=True))}"
 
         if len(inspire_teams):
             awards_script = f"""\nAs for awards, the Inspire nominations were {inspire_teams[0].mention(full=True)} winning{runners_up}. \n"""
         else:
             awards_script = ""
-        end_script = "I'm excited to cover how these teams will do at regionals, worlds, or MTI in future episodes."
+        end_script = "I'm excited to cover how these teams will do at regionals, worlds, or M T I in future episodes."
 
         return awards_script + end_script
         # read off the inspire nominees
         # say some quip about being excited to see how teams will do later in the season
     
     def full_script(self):
-        return self.event_intro() + self.quals_matches() + self.elims_matches() + self.awards_conclusion()
+        return (self.event_intro() + self.quals_matches() + self.elims_matches() + self.awards_conclusion()).replace("\n", " ")
 
 us_state_to_abbrev = {
     "Alabama": "AL",

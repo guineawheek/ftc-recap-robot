@@ -3,3 +3,7 @@ tts_output.wav
 venv/
 cenv/
 token
+*.mkv*
+*.mp4*
+*.txt
+.ipynb_checkpoints/
