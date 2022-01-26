@@ -25,7 +25,8 @@ Make a file called `token` and provde the following:
 {
 	"username": "[ftc-events username]",
 	"token": "[ftc-events token]",
-}```
+}
+```
 
 
 ## Running:
