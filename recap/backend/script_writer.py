@@ -120,6 +120,9 @@ class ScriptWriter:
         matches = self.client.fetch(f"schedule/{self.event_code}/qual/hybrid")
         self.quals = matches['schedule']
 
+        rankings = self.client.fetch(f"rankings/{self.event_code}")
+        self.rankings = sorted([(x['rank'], self.teams[x['teamNumber']], x['sortOrder1']) for x in rankings['Rankings']], key=lambda x: int(x[0]))
+
         # team number -> team scores
 
         # top alliance score
@@ -201,8 +204,10 @@ class ScriptWriter:
 
         if date_fstart == date_fend:
             date_text = f"{date_fstart}, {date_start.year}"
+        else:
+            date_text = f"{date_fend}, {date_start.year}"
 
-        dialog = f"""Hello, my name is Outreach Lead from Team That Wants Inspire and today on Eff Tee See Recap
+        dialog = f"""Hello, this is Outreach Generator version seven point oh one three and today on Automated Eff Tee See Recap
 we will be talking about the {event_name} {event_type} that happened out of {city}, {state_prov} {region_name}, on {date_text}. """
 
         return dialog
@@ -236,6 +241,7 @@ we will be talking about the {event_name} {event_type} that happened out of {cit
             "Their robot's aerodynamic pocketing gave them dominating speed.",
             "Their robot's mecanum drivetrain gave them the precision needed to score.",
             "Their robot's six wheel drive gave them the acceleration needed to score.",
+            "Their robot's go build a turret made them unmatched on the shared hub."
             "Their driveteam's many hours of practice have paid off.",
         ]
         top_score_teams = [self.teams[x] for x in self.top_score[1]]
@@ -272,6 +278,16 @@ an average of {statistics.mean(consistent_team.scores):.1f}.
 
         # read off how finals goes similar to semifinals
         # with "the winning alliance scores something something something"
+
+        if self.event['regionCode'] == "USCHS" and not self.alliances:
+            script = f"""Due to the state of the pandemic at the time of the event, there were no eliminations matches.
+            Instead of winning and finalist alliances, advancement considers team rank.
+            The first ranked team was {self.rankings[0][1]} with {self.rankings[0][2]} ranking points.
+            The second ranked team was {self.rankings[1][1]} with {self.rankings[1][2]} ranking points.
+            The third ranked team was {self.rankings[2][1]} with {self.rankings[2][2]} ranking points.
+            The fourth ranked team was {self.rankings[3][1]} with {self.rankings[3][2]} ranking points. """
+
+            return script
 
         if not self.alliances:
             return ""

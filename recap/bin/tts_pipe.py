@@ -288,7 +288,7 @@ If you don't specify any models, then it uses LJSpeech based English model.
         text = f.read().replace("..", ".")
     print(" > Text: {}".format(text))
     #print(config_path, encoder_config_path)
-    #synthesizer.tts_model.decoder.set_max_decoder_steps(2000)
+    synthesizer.tts_model.decoder.max_decoder_steps = 3000
 
 
     # kick it
